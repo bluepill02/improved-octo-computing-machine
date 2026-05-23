@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/llm-benchmark-aggregated.json",
+  "title": "LLM Benchmark Aggregated Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lastUpdated", "sourceCount", "itemCount", "items"],
+  "properties": {
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sourceCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "itemCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/NormalizedRecord"
+      }
+    }
+  },
+  "$defs": {
+    "NormalizedRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "model", "pricing", "output_tokens", "latency_ms", "source"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pricing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input_per_1k", "output_per_1k", "currency"],
+          "properties": {
+            "input_per_1k": {
+              "type": "number",
+              "minimum": 0
+            },
+            "output_per_1k": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          }
+        },
+        "output_tokens": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "latency_ms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["p50", "p95"],
+          "properties": {
+            "p50": {
+              "type": ["integer", "null"],
+              "minimum": 0
+            },
+            "p95": {
+              "type": ["integer", "null"],
+              "minimum": 0
+            }
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url", "fetchedAt"],
+          "properties": {
+            "url": {
+              "type": ["string", "null"],
+              "format": "uri"
+            },
+            "fetchedAt": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  }
+}
