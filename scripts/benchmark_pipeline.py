@@ -384,7 +384,7 @@ def syndicate_to_social(results: list, chart_path: str | None):
         f"📊 LIVE TELEMETRY REFRESH:\n"
         f"Gemini 2.5 Flash direct API latency is down to {gemini_lat:.2f}s.\n\n"
         f"Token Infrastructure Cost: $0.00 (Free Tier) vs Wrapper SaaS markup costs estimated at $20.00/1M tokens.\n"
-        f"Verifiable data ➔ https://improved-octo-computing-machine-p380vtc3k-bluepill02s-projects.vercel.app\n"
+        f"Verifiable data ➔ https://improved-octo-computing-machine-61iun62si-bluepill02s-projects.vercel.app\n"
         f"#AIEconomics #BuildInPublic #EEAT"
     )
 
@@ -438,7 +438,7 @@ def trigger_immediate_indexing(results: list):
     and IndexNow protocol for near-instant crawling and indexation.
     """
     # 1. Gather all URLs to index
-    base_url = "https://improved-octo-computing-machine-p380vtc3k-bluepill02s-projects.vercel.app"
+    base_url = "https://improved-octo-computing-machine-61iun62si-bluepill02s-projects.vercel.app"
     urls = [base_url]
     # Deduplicate slugs from results
     slugs = sorted(list(set(r["slug"] for r in results if "slug" in r)))
@@ -537,9 +537,9 @@ def trigger_immediate_indexing(results: list):
             # We submit to indexnow.org
             indexnow_url = "https://api.indexnow.org/indexnow"
             payload = {
-                "host": "improved-octo-computing-machine-p380vtc3k-bluepill02s-projects.vercel.app",
+                "host": "improved-octo-computing-machine-61iun62si-bluepill02s-projects.vercel.app",
                 "key": indexing_api_key,
-                "keyLocation": f"https://improved-octo-computing-machine-p380vtc3k-bluepill02s-projects.vercel.app/{indexing_api_key}.txt",
+                "keyLocation": f"https://improved-octo-computing-machine-61iun62si-bluepill02s-projects.vercel.app/{indexing_api_key}.txt",
                 "urlList": urls
             }
             resp = requests.post(indexnow_url, json=payload, timeout=10)
