@@ -134,7 +134,7 @@ export default async function ComparePage({ params }: PageProps) {
           <div className="header-cta-container">
             <Suspense fallback={<div className="cta-fallback">Loading recommendation...</div>}>
               {/* Dynamic CTA component automatically maps to ?intent= from URL or uses the route slug */}
-              <DynamicCTA variant="page" analyticsLabel={`cta-page-seo-${slug}`} />
+              <DynamicCTA variant="page" fallbackIntent={slug} analyticsLabel={`cta-page-seo-${slug}`} />
             </Suspense>
           </div>
         </div>
@@ -172,7 +172,7 @@ export default async function ComparePage({ params }: PageProps) {
           Looking for the highest-performing platform optimized for {readableTitle} workloads?
         </h3>
         <Suspense fallback={<div className="cta-fallback">Loading recommendation...</div>}>
-          <DynamicCTA variant="page" analyticsLabel={`cta-strip-seo-${slug}`} />
+          <DynamicCTA variant="page" fallbackIntent={slug} analyticsLabel={`cta-strip-seo-${slug}`} />
         </Suspense>
       </section>
 
@@ -191,7 +191,7 @@ export default async function ComparePage({ params }: PageProps) {
 
       {/* ── Exit Intent Behavioral Trigger ── */}
       <Suspense fallback={null}>
-        <ExitIntentModal />
+        <ExitIntentModal fallbackIntent={slug} />
       </Suspense>
     </main>
   );

@@ -14,7 +14,11 @@ import DynamicCTA from "@/components/DynamicCTA";
  * - Closes on Escape key, backdrop click, or the ✕ button
  * - Entrance animation: fade-in + slide-up
  */
-export default function ExitIntentModal() {
+interface ExitIntentModalProps {
+  fallbackIntent?: string;
+}
+
+export default function ExitIntentModal({ fallbackIntent }: ExitIntentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -106,6 +110,7 @@ export default function ExitIntentModal() {
         {/* The dynamic CTA — reads ?intent= from the URL */}
         <DynamicCTA
           variant="modal"
+          fallbackIntent={fallbackIntent}
           analyticsLabel="exit-intent-modal-cta"
           className="exit-modal-cta-btn"
         />

@@ -16,12 +16,15 @@ interface DynamicCTAProps {
   variant?: "page" | "modal";
   /** Analytics label attached as a data attribute for tracking. */
   analyticsLabel?: string;
+  /** Fallback intent (e.g. from page slug) if ?intent is missing in URL. */
+  fallbackIntent?: string;
 }
 
 /**
  * DynamicCTA
  *
  * Reads ?intent= from the URL and maps it to a personalised CTA string.
+ * Falls back to fallbackIntent if the URL parameter is missing.
  * Falls back to DEFAULT_CTA_TEXT when no recognised intent is present.
  * Always routes to AFFILIATE_URL on click — the single hardcoded destination.
  */
@@ -30,9 +33,10 @@ export default function DynamicCTA({
   className = "",
   variant = "page",
   analyticsLabel,
+  fallbackIntent,
 }: DynamicCTAProps) {
   const searchParams = useSearchParams();
-  const intentParam  = searchParams.get("intent") ?? "";
+  const intentParam  = searchParams.get("intent") ?? fallbackIntent ?? "";
   const ctaText      = overrideText
     ?? INTENT_CTA_MAP[intentParam.toLowerCase()]
     ?? DEFAULT_CTA_TEXT;
