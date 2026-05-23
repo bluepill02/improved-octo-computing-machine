@@ -2,7 +2,6 @@
 
 import { useSearchParams } from "next/navigation";
 import {
-  AFFILIATE_URL,
   INTENT_CTA_MAP,
   DEFAULT_CTA_TEXT,
 } from "@/constants/affiliate";
@@ -48,10 +47,11 @@ export default function DynamicCTA({
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     // All other clicks: track & navigate
     try {
+      const targetUrl = `/api/affiliate?intent=${encodeURIComponent(intentParam)}`;
       // Emit a simple custom event that any analytics layer can listen to
       window.dispatchEvent(
         new CustomEvent("affiliate_cta_click", {
-          detail: { label, intent: intentParam, url: AFFILIATE_URL },
+          detail: { label, intent: intentParam, url: targetUrl },
         })
       );
     } catch {
@@ -61,7 +61,7 @@ export default function DynamicCTA({
 
   return (
     <a
-      href={AFFILIATE_URL}
+      href={`/api/affiliate?intent=${encodeURIComponent(intentParam)}`}
       target="_blank"
       rel="noopener noreferrer"
       onClick={handleClick}
