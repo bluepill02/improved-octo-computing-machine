@@ -37,5 +37,6 @@ jobs:
           FIREBASE_CERT_PATH: "./firebase-admin-sdk.json"
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          INDEXING_API_KEY: ${{ secrets.INDEXING_API_KEY }}
         run: |
           python scripts/benchmark_pipeline.py

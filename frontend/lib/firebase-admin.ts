@@ -10,6 +10,30 @@ import { getFirestore } from "firebase-admin/firestore";
 import { readFileSync } from "fs";
 import path from "path";
 
+function cleanEnvValue(val: string | undefined): string | undefined {
+  if (!val) return val;
+  return val
+    .replace(/^\ufeff/, "")       // Strip Byte Order Mark (BOM)
+    .replace(/^"+|"+$/g, "")      // Strip surrounding double quotes
+    .replace(/\\r/g, "")          // Strip literal \r
+    .replace(/\r/g, "")           // Strip actual carriage returns
+    .replace(/\n/g, "")           // Strip actual newlines
+    .trim();
+}
+
+function cleanPrivateKey(val: string | undefined): string | undefined {
+  if (!val) return val;
+  // Clean surrounding quotes and carriage returns
+  const cleaned = val
+    .replace(/^\ufeff/, "")
+    .replace(/^"+|"+$/g, "")
+    .replace(/\\r/g, "")
+    .replace(/\r/g, "")
+    .trim();
+  // Replace literal \n with actual newlines for service credentials
+  return cleaned.replace(/\\n/g, "\n");
+}
+
 function resolveServiceAccount() {
   // Prefer an explicit cert file path (local dev)
   const certPath = process.env.FIREBASE_CERT_PATH;
@@ -23,9 +47,9 @@ function resolveServiceAccount() {
   }
 
   // Vercel / CI: individual env vars
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const projectId = cleanEnvValue(process.env.FIREBASE_PROJECT_ID);
+  const clientEmail = cleanEnvValue(process.env.FIREBASE_CLIENT_EMAIL);
+  const privateKey = cleanPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(

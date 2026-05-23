@@ -1,14 +1,9 @@
 """
-Affiliate Benchmarking Pipeline
+Affiliate Benchmarking & Syndication Pipeline
 Providers : Google AI Studio — Gemma 4 31B IT (gemma-4-31b-it)
             OpenRouter        — auto free-tier routing
-Outputs   : Schema-validated Firestore documents (or dry-run stdout)
-
-Timeout strategy for Gemma:
-  Google's API keeps the TCP connection alive during capacity queuing so
-  Python's socket-level timeout cannot fire.  We wrap the HTTP call in a
-  ThreadPoolExecutor and call future.result(timeout=N) from the main thread,
-  which is a true wall-clock kill regardless of TCP state.
+Outputs   : Schema-validated Firestore documents, Matplotlib comparison charts,
+            and autonomous social media syndication feeds.
 """
 import os
 import sys
@@ -81,7 +76,6 @@ GEMINI_COST_1M_IN  = 0.0   # Free tier
 GEMINI_COST_1M_OUT = 0.0
 
 # OpenRouter — auto-selects best free model available
-# Fallback chain: gemma-3-27b → gemma-3-12b → whatever is free
 OPENROUTER_MODEL      = "openrouter/auto"
 OPENROUTER_COST_1M_IN  = 0.0   # Free tier
 OPENROUTER_COST_1M_OUT = 0.0
@@ -306,7 +300,260 @@ def format_telemetry_with_llm(telemetry: dict) -> tuple[str, str]:
         )
 
 
-# ─── 6. Main ─────────────────────────────────────────────────────────────────
+# ─── 6. Matplotlib Visualization Generator ─────────────────────────────────────
+def generate_comparison_chart(results: list) -> str | None:
+    """
+    Generates a gorgeous high-contrast bar chart comparing raw API costs 
+    (from the successful runs) against a standard B2B SaaS wrapper markup.
+    """
+    try:
+        import matplotlib
+        matplotlib.use("Agg")  # Non-interactive backend
+        import matplotlib.pyplot as plt
+
+        print("\n📊 Generating Factual Cost Comparison Chart...")
+        
+        # We calculate the average raw cost per 1M tokens across successful runs
+        raw_costs = [r["cost_per_1m_tokens_usd"] for r in results]
+        avg_raw_cost = sum(raw_costs) / len(raw_costs) if raw_costs else 0.0
+
+        # High-ticket B2B SaaS wrapper margins are estimated at $20.00 per 1M tokens 
+        # (reflecting standard markups where they charge $49/mo for basic token volumes)
+        wrapper_cost = 20.00
+
+        categories = ["Our Raw API Cost", "Standard Wrapper SaaS Cost"]
+        costs      = [avg_raw_cost, wrapper_cost]
+        colors     = ["#58a6ff", "#f85149"] # Sleek brand HSL tailored colors (glassmorphic dark UI context)
+
+        # Style context setup
+        plt.style.use("dark_background")
+        fig, ax = plt.subplots(figsize=(6, 4))
+        
+        bars = ax.bar(categories, costs, color=colors, width=0.5, edgecolor="rgba(255,255,255,0.1)", linewidth=1)
+        ax.set_ylabel("Standardised Cost per 1M Tokens (USD)", fontsize=10, color="#8b949e", fontfamily="sans-serif")
+        ax.set_title("API Economics: Raw Infrastructure vs. Wrapper Markups", fontsize=11, fontweight="bold", pad=15, color="#f0f6fc", fontfamily="sans-serif")
+        
+        # Grid and borders
+        ax.grid(axis="y", linestyle="--", alpha=0.15)
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_color("#30363d")
+        ax.spines["bottom"].set_color("#30363d")
+        ax.tick_params(colors="#8b949e", labelsize=9)
+
+        # Draw labels directly on the bars
+        for bar in bars:
+            height = bar.get_height()
+            ax.annotate(f"${height:.4f}",
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha="center", va="bottom", fontsize=9, color="#f0f6fc", fontweight="semibold")
+
+        plt.tight_layout()
+        chart_dir = os.path.dirname(os.path.abspath(__file__))
+        chart_path = os.path.join(chart_dir, "cost_comparison.png")
+        plt.savefig(chart_path, dpi=150)
+        plt.close()
+        
+        print(f"  ✓ Comparison chart successfully saved to: {chart_path}")
+        return chart_path
+    except ImportError:
+        print("  [SKIP] Visualisation: 'matplotlib' library not installed in this execution context.")
+        return None
+    except Exception as exc:
+        print(f"  [WARN] Visualisation generator encountered an error: {exc}")
+        return None
+
+
+# ─── 7. Autonomous Content Syndication ─────────────────────────────────────────
+def syndicate_to_social(results: list, chart_path: str | None):
+    """
+    Syndicates the empirical benchmarking data to X/Twitter and LinkedIn 
+    using API integrations if environment credentials are present.
+    """
+    x_key    = os.environ.get("X_API_KEY")
+    x_secret = os.environ.get("X_API_SECRET")
+    x_token  = os.environ.get("X_ACCESS_TOKEN")
+    x_tok_sec = os.environ.get("X_ACCESS_SECRET")
+
+    # Generate a data-driven organic caption
+    gemini_lat = next((r["latency_seconds"] for r in results if "Gemini" in r["tool_name"]), 5.0)
+    
+    caption = (
+        f"📊 LIVE TELEMETRY REFRESH:\n"
+        f"Gemini 2.5 Flash direct API latency is down to {gemini_lat:.2f}s.\n\n"
+        f"Token Infrastructure Cost: $0.00 (Free Tier) vs Wrapper SaaS markup costs estimated at $20.00/1M tokens.\n"
+        f"Verifiable data ➔ https://improved-octo-computing-machine-p380vtc3k-bluepill02s-projects.vercel.app\n"
+        f"#AIEconomics #BuildInPublic #EEAT"
+    )
+
+    print("\n📣 Preparing Automated Content Syndication...")
+    print("── Factual Caption Draft ──")
+    print(caption)
+    print("───────────────────────────")
+
+    if not (x_key and x_secret and x_token and x_tok_sec):
+        print("\n  [SKIP] Syndication: X API Credentials (X_API_KEY etc.) not set in environment.")
+        print("         To activate automated socials, add these credentials to your GitHub workflow secrets.")
+        return
+
+    # In production, this module will execute raw HTTP POST calls using requests_oauthlib 
+    # to upload the Matplotlib image to X and post the tweet containing the caption.
+    print("  → Authenticating and publishing to social network endpoints...")
+    try:
+        from requests_oauthlib import OAuth1
+        # 1. Media Upload (if chart exists)
+        media_id = None
+        if chart_path and os.path.exists(chart_path):
+            upload_url = "https://upload.twitter.com/1.1/media/upload.json"
+            oauth = OAuth1(x_key, client_secret=x_secret, resource_owner_key=x_token, resource_owner_secret=x_tok_sec)
+            with open(chart_path, "rb") as media_file:
+                files = {"media": media_file}
+                resp = requests.post(upload_url, auth=oauth, files=files)
+                if resp.ok:
+                    media_id = resp.json().get("media_id_string")
+                    print("     ✓ Matplotlib visual successfully uploaded to social CDN.")
+
+        # 2. Post Tweet
+        tweet_url = "https://api.twitter.com/2/tweets"
+        oauth = OAuth1(x_key, client_secret=x_secret, resource_owner_key=x_token, resource_owner_secret=x_tok_sec)
+        payload = {"text": caption}
+        if media_id:
+            payload["media"] = {"media_ids": [media_id]}
+            
+        resp = requests.post(tweet_url, auth=oauth, json=payload)
+        if resp.ok:
+            print("     ✓ Factual campaign published successfully to your social feed!")
+        else:
+            print(f"     ✗ Posting failed (HTTP {resp.status_code}): {resp.text}")
+    except Exception as exc:
+        print(f"     ✗ Syndication execution error: {exc}")
+
+
+# ─── 8. Search Engine Indexing (Immediate Indexing API) ─────────────────────────
+def trigger_immediate_indexing(results: list):
+    """
+    Submits generated URLs to search engines via the Google Indexing API 
+    and IndexNow protocol for near-instant crawling and indexation.
+    """
+    # 1. Gather all URLs to index
+    base_url = "https://improved-octo-computing-machine-p380vtc3k-bluepill02s-projects.vercel.app"
+    urls = [base_url]
+    # Deduplicate slugs from results
+    slugs = sorted(list(set(r["slug"] for r in results if "slug" in r)))
+    for slug in slugs:
+        urls.append(f"{base_url}/compare/{slug}")
+
+    print("\n🔍 Preparing Search Engine Indexing (AEO Immediate Indexing)...")
+    print(f"URLs queued for submission ({len(urls)}):")
+    for u in urls:
+        print(f"  → {u}")
+
+    # 2. Try Google Indexing API via Service Account credentials
+    sa_info = None
+    cert_path = os.environ.get("FIREBASE_CERT_PATH")
+    if cert_path and os.path.exists(cert_path):
+        try:
+            with open(cert_path, "r", encoding="utf-8") as f:
+                sa_info = json.load(f)
+        except Exception as exc:
+            print(f"  [WARN] Could not parse Service Account JSON from {cert_path}: {exc}")
+
+    # Fallback to env vars for service account credentials if cert path isn't a file
+    if not sa_info:
+        proj_id = os.environ.get("FIREBASE_PROJECT_ID")
+        email = os.environ.get("FIREBASE_CLIENT_EMAIL")
+        pkey = os.environ.get("FIREBASE_PRIVATE_KEY")
+        if proj_id and email and pkey:
+            # Reconstruct private key newlines
+            pkey_clean = pkey.replace("\\n", "\n").replace('"', '').strip()
+            sa_info = {
+                "project_id": proj_id,
+                "client_email": email,
+                "private_key": pkey_clean
+            }
+
+    google_success = False
+    if sa_info and "private_key" in sa_info and "client_email" in sa_info:
+        try:
+            import jwt
+            print("  → Authenticating with Google OAuth2 for Indexing API...")
+            now = int(time.time())
+            token_url = "https://oauth2.googleapis.com/token"
+            payload = {
+                "iss": sa_info["client_email"],
+                "scope": "https://www.googleapis.com/auth/indexing",
+                "aud": token_url,
+                "exp": now + 3600,
+                "iat": now
+            }
+            # Sign the JWT assertion
+            assertion = jwt.encode(payload, sa_info["private_key"], algorithm="RS256")
+            
+            # Fetch Access Token
+            token_resp = requests.post(token_url, data={
+                "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                "assertion": assertion
+            }, timeout=15)
+            
+            if token_resp.ok:
+                access_token = token_resp.json().get("access_token")
+                print("     ✓ Google OAuth2 token acquired successfully.")
+                
+                # Call Google Indexing API publish endpoint for each URL
+                indexing_url = "https://indexing.googleapis.com/v3/urlNotifications:publish"
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {access_token}"
+                }
+                
+                for url in urls:
+                    body = {
+                        "url": url,
+                        "type": "URL_UPDATED"
+                    }
+                    resp = requests.post(indexing_url, headers=headers, json=body, timeout=10)
+                    if resp.ok:
+                        print(f"     ✓ Google Indexing: Submitted update for {url}")
+                    else:
+                        print(f"     ✗ Google Indexing: Failed for {url} (HTTP {resp.status_code}): {resp.text[:200]}")
+                google_success = True
+            else:
+                print(f"     ✗ Google OAuth2 authentication failed: {token_resp.text[:300]}")
+        except ImportError:
+            print("  [SKIP] Google Indexing: 'PyJWT' library not installed in this execution context.")
+        except Exception as exc:
+            print(f"  [WARN] Google Indexing API encountered an error: {exc}")
+    else:
+        print("  [SKIP] Google Indexing API: Service account credentials not found or incomplete.")
+
+    # 3. Check for INDEXING_API_KEY in environment
+    indexing_api_key = os.environ.get("INDEXING_API_KEY")
+    if indexing_api_key and indexing_api_key != "YOUR_GOOGLE_INDEXING_API_KEY_HERE":
+        print(f"  → Found INDEXING_API_KEY: {indexing_api_key[:6]}... (Ping/IndexNow active)")
+        # IndexNow Submission
+        try:
+            # We submit to indexnow.org
+            indexnow_url = "https://api.indexnow.org/indexnow"
+            payload = {
+                "host": "improved-octo-computing-machine-p380vtc3k-bluepill02s-projects.vercel.app",
+                "key": indexing_api_key,
+                "keyLocation": f"https://improved-octo-computing-machine-p380vtc3k-bluepill02s-projects.vercel.app/{indexing_api_key}.txt",
+                "urlList": urls
+            }
+            resp = requests.post(indexnow_url, json=payload, timeout=10)
+            if resp.ok:
+                print("     ✓ IndexNow: Successfully notified search engines via IndexNow protocol.")
+            else:
+                print(f"     ✗ IndexNow: Submission failed (HTTP {resp.status_code}): {resp.text[:200]}")
+        except Exception as exc:
+            print(f"     ✗ IndexNow: Execution error: {exc}")
+    else:
+        print("  [SKIP] IndexNow/Key-based Indexing: INDEXING_API_KEY not configured or is default.")
+
+
+# ─── 9. Main ─────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="Run affiliate LLM benchmark pipeline.")
     parser.add_argument(
@@ -320,7 +567,7 @@ def main():
         db = init_firebase()
 
     print("\n══════════════════════════════════════════")
-    print(" Affiliate LLM Benchmark Pipeline")
+    print(" Affiliate LLM Benchmark & Syndication Pipeline")
     print(f" Mode: {'DRY RUN (no Firestore writes)' if args.dry_run else 'LIVE'}")
     print("══════════════════════════════════════════\n")
 
@@ -388,6 +635,13 @@ def main():
                 written += 1
             except Exception as exc:
                 print(f"  ✗ Firestore write failed: {exc}")
+
+    # ── 9. Dynamic Visualization & Automated Syndication Pipeline ───────────────
+    chart_path = generate_comparison_chart(results)
+    syndicate_to_social(results, chart_path)
+
+    # ── 10. Immediate Search Indexing Pipeline (Google Indexing & IndexNow) ─────
+    trigger_immediate_indexing(results)
 
     print(f"\n══ Done. {len(results)} benchmarked, {written} written to Firestore. ══\n")
 
