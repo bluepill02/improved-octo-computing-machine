@@ -22,15 +22,55 @@ export default async function HomePage() {
   try {
     benchmarks = await fetchBenchmarks(20);
   } catch (err) {
-
     console.error("[Firestore] Failed to fetch benchmarks:", err);
     fetchError =
       err instanceof Error ? err.message : "Unknown error fetching data.";
     benchmarks = [];
   }
 
+  // Find the latest verification timestamp to act as the schema's dateModified (AEO/SEO compliance)
+  const newestTimestamp = benchmarks.length > 0
+    ? benchmarks.reduce((latest, current) =>
+        new Date(current.source_timestamp) > new Date(latest)
+          ? current.source_timestamp
+          : latest,
+        benchmarks[0].source_timestamp
+      )
+    : "2026-05-23T07:58:31+00:00";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "LLM Benchmark Dashboard — Empirical API Telemetry",
+    "description": "Schema-validated benchmark data captured directly from Google AI Studio and OpenRouter APIs. Real latency, token counts, and cost metrics — no estimates, no hallucinations.",
+    "datePublished": "2026-05-23T07:58:31+00:00",
+    "dateModified": newestTimestamp,
+    "author": {
+      "@type": "Organization",
+      "name": "Empirical AI Affiliate Niche"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Empirical AI Affiliate Niche",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://example.com/favicon.ico"
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://example.com"
+    }
+  };
+
   return (
     <main className="page-main" id="main-content">
+      {/* ── Global JSON-LD Article Schema for AEO/SEO ── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* ── Page Header ── */}
       <header className="page-header">
         <div className="header-inner">
