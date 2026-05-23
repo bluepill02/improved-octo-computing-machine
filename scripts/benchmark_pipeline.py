@@ -29,6 +29,8 @@ SCHEMA = {
         "source_timestamp": {"type": "string", "format": "date-time"},
         "h2_query":         {"type": "string"},
         "quick_answer_text": {"type": "string", "maxLength": 350},
+        "slug":             {"type": "string"},
+        "intent":           {"type": "string"},
         "benchmark_data": {
             "type": "object",
             "properties": {
@@ -49,10 +51,29 @@ SCHEMA = {
     ],
 }
 
-# ─── 2. Constants ─────────────────────────────────────────────────────────────
-TEST_PROMPT = (
-    "Write a 200-word executive summary on the benefits of semantic HTML in SEO."
-)
+# ─── 2. Constants & Use Cases ──────────────────────────────────────────────────
+USE_CASES = [
+    {
+        "slug": "ai-writer",
+        "prompt": "Write a 150-word executive summary on the benefits of B2B copy automation.",
+        "intent": "ai-writer"
+    },
+    {
+        "slug": "code-assistant",
+        "prompt": "Write a high-performance recursive Python function to scrape and parse custom JSON endpoints.",
+        "intent": "code-assistant"
+    },
+    {
+        "slug": "seo-tool",
+        "prompt": "Explain Answer Engine Optimization (AEO) and its impact on search visibility in 100 words.",
+        "intent": "seo-tool"
+    },
+    {
+        "slug": "chatbot",
+        "prompt": "Draft a professional customer support chat reply addressing an account billing issue.",
+        "intent": "chatbot"
+    }
+]
 
 # Gemini 2.5 Flash
 GEMINI_MODEL      = "gemini-2.5-flash"
@@ -91,7 +112,7 @@ def init_firebase():
 GEMINI_TIMEOUT = (10, 30)   # (connect_timeout, read_timeout) seconds
 
 
-def call_gemini() -> dict | None:
+def call_gemini(prompt_text: str) -> dict | None:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("  [SKIP] Gemma: GEMINI_API_KEY not set.")
@@ -102,7 +123,7 @@ def call_gemini() -> dict | None:
         f"{GEMINI_MODEL}:generateContent?key={api_key}"
     )
     payload = {
-        "contents": [{"parts": [{"text": TEST_PROMPT}]}],
+        "contents": [{"parts": [{"text": prompt_text}]}],
         "generationConfig": {"maxOutputTokens": 800},
     }
 
@@ -167,7 +188,7 @@ def call_gemini() -> dict | None:
     }
 
 
-def call_openrouter() -> dict | None:
+def call_openrouter(prompt_text: str) -> dict | None:
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         print("  [SKIP] OpenRouter: OPENROUTER_API_KEY not set.")
@@ -182,7 +203,7 @@ def call_openrouter() -> dict | None:
     }
     payload = {
         "model":    OPENROUTER_MODEL,
-        "messages": [{"role": "user", "content": TEST_PROMPT}],
+        "messages": [{"role": "user", "content": prompt_text}],
         # OpenRouter will route to the best available free model automatically
         "provider": {"allow_fallbacks": True},
     }
@@ -303,12 +324,16 @@ def main():
     print(f" Mode: {'DRY RUN (no Firestore writes)' if args.dry_run else 'LIVE'}")
     print("══════════════════════════════════════════\n")
 
-    # ── Run benchmarks
+    # ── Run benchmarks across all use cases
     results = []
-    for caller in (call_gemini, call_openrouter):
-        res = caller()
-        if res:
-            results.append(res)
+    for case in USE_CASES:
+        print(f"\n⚡ Running Benchmarks for Use Case: {case['slug']} ⚡")
+        for caller in (call_gemini, call_openrouter):
+            res = caller(case["prompt"])
+            if res:
+                res["slug"] = case["slug"]
+                res["intent"] = case["intent"]
+                results.append(res)
 
     if not results:
         print("\n[ERROR] No successful API responses. Exiting.")
@@ -335,6 +360,8 @@ def main():
             "source_timestamp":  datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "h2_query":          h2_query,
             "quick_answer_text": quick_answer[:350],
+            "slug":              res["slug"],
+            "intent":            res["intent"],
             "benchmark_data": {
                 "latency_seconds":       res["latency_seconds"],
                 "output_tokens":         res["output_tokens"],

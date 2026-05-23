@@ -28,6 +28,8 @@ function mapDoc(
     source_timestamp: d.source_timestamp,
     h2_query: d.h2_query,
     quick_answer_text: d.quick_answer_text,
+    slug: typeof d.slug === "string" ? d.slug : undefined,
+    intent: typeof d.intent === "string" ? d.intent : undefined,
     benchmark_data: {
       latency_seconds: Number(d.benchmark_data.latency_seconds ?? 0),
       output_tokens: Number(d.benchmark_data.output_tokens ?? 0),
@@ -51,4 +53,26 @@ export async function fetchBenchmarks(limit = 20): Promise<BenchmarkDocument[]> 
   return snapshot.docs
     .map(mapDoc)
     .filter((d): d is BenchmarkDocument => d !== null);
+}
+
+/**
+ * Fetch benchmarks filtered by their specific pSEO use-case slug.
+ * @param slug  The use case identifier (e.g. "ai-writer")
+ */
+export async function fetchBenchmarksBySlug(slug: string): Promise<BenchmarkDocument[]> {
+  const snapshot = await adminDb
+    .collection("llm_benchmarks")
+    .where("slug", "==", slug)
+    .get();
+
+  const docs = snapshot.docs
+    .map(mapDoc)
+    .filter((d): d is BenchmarkDocument => d !== null);
+
+  // Sort descending in memory to avoid Firestore requiring a composite index
+  return docs.sort(
+    (a, b) =>
+      new Date(b.source_timestamp).getTime() -
+      new Date(a.source_timestamp).getTime()
+  );
 }

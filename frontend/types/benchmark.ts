@@ -25,4 +25,8 @@ export interface BenchmarkDocument {
   quick_answer_text: string;
   /** Raw benchmark telemetry */
   benchmark_data: BenchmarkData;
+  /** Optional slug for dynamic programmatic SEO pages */
+  slug?: string;
+  /** Optional intent categorisation for dynamic affiliate mapping */
+  intent?: string;
 }
